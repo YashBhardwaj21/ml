@@ -25,3 +25,6 @@ data/
 # OS
 .DS_Store
 Thumbs.db
+
+bci_script.md
+parse_nb.py
