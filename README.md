@@ -1,19 +1,19 @@
-# BCI Motor Imagery Classification: EDA & Preprocessing
+# BCI Motor Imagery Classification — EDA & Preprocessing
 
 ## Overview
 
-This project implements a complete EEG signal processing and exploratory data analysis (EDA) pipeline for Brain-Computer Interface (BCI) applications using the BCI Competition IV Dataset 2a. The pipeline processes raw EEG recordings from a single subject (A01T), performs rigorous artifact removal, and produces clean, ML-ready epoched data for a 4-class motor imagery classification task.
+This project implements a complete, **multi-subject** EEG signal processing and Exploratory Data Analysis (EDA) pipeline for Brain-Computer Interface (BCI) applications using the **BCI Competition IV Dataset 2a**. The pipeline processes raw EEG recordings for all **9 subjects** (A01–A09), performs rigorous artifact removal, and produces clean, ML-ready epoched data for a 4-class motor imagery classification task.
 
-The core challenge in EEG-based BCI is that brain signals are extremely weak (microvolts), buried under noise from eye movements, muscle activity, and hardware artifacts. This notebook documents every step taken to isolate genuine motor imagery brain signals from that noise.
+The core challenge in EEG-based BCI is that brain signals are extremely weak (microvolts), buried under noise from eye movements, muscle activity, and hardware artifacts. This project documents every step taken to isolate genuine motor imagery brain signals from that noise.
 
 ---
 
 ## Dataset
 
 - **Source:** BCI Competition IV Dataset 2a
-- **Link:** https://www.bbci.de/competition/iv/
+- **Link:** https://www.bbci.de/competition/iv/#dataset2a
 - **Format:** `.gdf` (General Data Format for biosignals)
-- **Subject used:** A01T (Training session)
+- **Subjects:** A01–A09 (Training `T` and Evaluation `E` sessions for each)
 
 ### Recording Specifications
 
@@ -23,39 +23,63 @@ The core challenge in EEG-based BCI is that brain signals are extremely weak (mi
 | EEG Channels | 22 |
 | EOG Channels | 3 (EOG-left, EOG-central, EOG-right) |
 | Total Channels | 25 |
-| Recording Duration | 2690.11 seconds (~44.8 minutes) |
 | Hardware Bandpass | 0.5 Hz – 100 Hz |
 
 ### Motor Imagery Classes
 
-| Class | Event Code | Trials | Description |
-|-------|-----------|--------|-------------|
+| Class | Event Code | Trials (per subject) | Description |
+|-------|-----------|----------------------|-------------|
 | Left Hand | 769 | 72 | Imagined left hand movement |
 | Right Hand | 770 | 72 | Imagined right hand movement |
 | Both Feet | 771 | 72 | Imagined feet movement |
 | Tongue | 772 | 72 | Imagined tongue movement |
 
-The dataset is perfectly balanced with 72 trials per class (288 total) across 9 experimental runs, making it ideal for machine learning without class imbalance at the raw stage.
+Each subject's training session contains 288 trials (perfectly balanced at 72 per class) across 9 experimental runs.
 
-### Additional Event Markers Found in Data
+### Additional Event Markers
 
 | Event Code | Count | Meaning |
 |-----------|-------|---------|
-| 768 | 288 | Trial start / fixation cross (appears before every MI cue) |
-| 32766 | 9 | New run begins (session structure marker) |
-| 1023 | 15 | Rejected trial (flagged by original experimenters) |
-| 1072 | 1 | Eye movement artifact marker |
-| 276, 277 | 1 each | Calibration/setup markers at session start |
+| 768 | 288 | Trial start / fixation cross |
+| 32766 | 9 | New run begins |
+| 1023 | varies | Trial rejected by original experimenters |
+| 1072 | varies | Eye movement artifact marker |
+| 276, 277 | 1 each | Calibration/setup markers |
 
 ---
 
 ## Project Structure
 
 ```
+ml/
 ├── data/
-│   ├── A01T.gdf                  # Raw input file
-│   └── A01T_clean_epo.fif        # Output: clean epoched data ready for ML
-├── bci.ipynb                     # Main Jupyter notebook (full pipeline)
+│   ├── raw/                          # Raw input files (18 files – T and E for A01–A09)
+│   │   ├── A01T.gdf  A01E.gdf
+│   │   ├── A02T.gdf  A02E.gdf
+│   │   └── ...       (through A09)
+│   ├── processed/                    # Clean epoched data (one .fif per training subject)
+│   │   ├── A01T_clean_epo.fif
+│   │   ├── A02T_clean_epo.fif
+│   │   └── ...       (A01–A09)
+│   └── features/                     # (Reserved for extracted CSP/feature files)
+├── notebooks/
+│   ├── bci.ipynb                     # Original single-subject EDA notebook (A01T)
+│   └── preprocessing.ipynb           # Multi-subject preprocessing notebook (A01–A09)
+├── src/
+│   ├── __init__.py
+│   └── preprocessing.py              # Reusable preprocessing module
+├── results/
+│   └── figures/                      # Per-subject diagnostic plots (55 files)
+│       ├── A0xT_amplitude_histogram.png
+│       ├── A0xT_correlation.png
+│       ├── A0xT_epoch_waveforms.png
+│       ├── A0xT_psd.png
+│       ├── A0xT_topomaps.png
+│       ├── A0xT_trial_distribution.png
+│       └── all_subjects_trial_summary.png
+├── bci_script.md                     # Step-by-step notebook walkthrough / documentation
+├── parse_nb.py                       # Utility: extracts code cells from notebooks
+├── requirements.txt                  # Pinned dependencies (Python 3.13)
 └── README.md
 ```
 
@@ -63,11 +87,71 @@ The dataset is perfectly balanced with 72 trials per class (288 total) across 9 
 
 ## Installation & Prerequisites
 
+**Python version:** 3.13 (as pinned in `requirements.txt`)
+
 ```bash
-pip install mne numpy pandas matplotlib seaborn scikit-learn scipy
+pip install -r requirements.txt
 ```
 
-Python 3.8+ recommended. All processing is done in a single Jupyter notebook using MNE-Python as the core EEG processing library.
+Key dependencies:
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `mne` | 1.11.0 | Core EEG I/O and processing |
+| `numpy` | 2.4.2 | Numerical computing |
+| `scipy` | 1.17.1 | Signal processing utilities |
+| `scikit-learn` | 1.8.0 | ML pipeline (CSP, classifiers) |
+| `pandas` | 3.0.1 | Tabular data handling |
+| `matplotlib` | 3.10.8 | Plotting |
+| `seaborn` | 0.13.2 | Statistical visualization |
+| `ipykernel` | 7.2.0 | Jupyter notebook support |
+
+---
+
+## Source Module — `src/preprocessing.py`
+
+The entire preprocessing pipeline is encapsulated in `src/preprocessing.py` as a set of composable functions. This allows any subject to be processed with a single call to `preprocess_subject()`.
+
+### Public API
+
+| Function | Description |
+|----------|-------------|
+| `load_subject(subject_id, data_path)` | Loads a `.gdf` file with EOG channels declared |
+| `apply_filter(raw)` | Applies 7–30 Hz FIR bandpass filter |
+| `set_montage(raw_filtered)` | Renames GDF channels to standard 10-20 labels and sets montage |
+| `run_ica(raw_filtered)` | Fits 20-component ICA, detects and removes EOG artifacts using all 3 EOG channels |
+| `create_epochs(raw_clean)` | Epochs at MI cues (−0.5s to +4.5s), baselines, and rejects trials > 100 µV |
+| `visualize_subject(...)` | Generates all 6 diagnostic plots for a subject |
+| `preprocess_subject(subject_id, ...)` | **End-to-end wrapper** — runs all steps and saves `.fif` output |
+
+### Visualization Functions
+
+| Function | Output File |
+|----------|-------------|
+| `plot_amplitude_histogram()` | `{id}_amplitude_histogram.png` |
+| `plot_trial_distribution()` | `{id}_trial_distribution.png` |
+| `plot_channel_correlation()` | `{id}_correlation.png` |
+| `plot_epoch_waveforms()` | `{id}_epoch_waveforms.png` |
+| `plot_topomaps()` | `{id}_topomaps.png` |
+| `plot_psd()` | `{id}_psd.png` |
+
+### Usage Example
+
+```python
+from src.preprocessing import preprocess_subject, visualize_subject
+
+# Process a subject end-to-end
+raw, raw_clean, epochs, epochs_final = preprocess_subject(
+    'A01T',
+    data_path='data/raw/',
+    save_path='data/processed/'
+)
+
+# Generate all diagnostic plots
+visualize_subject(raw, raw_clean, epochs, epochs_final,
+                  subject_id='A01T',
+                  figures_path='results/figures/')
+```
 
 ---
 
@@ -75,15 +159,13 @@ Python 3.8+ recommended. All processing is done in a single Jupyter notebook usi
 
 ### Step 1 — Data Loading
 
-Raw `.gdf` file loaded using `mne.io.read_raw_gdf()` with EOG channels explicitly declared. The file contains 672,528 timepoints across 25 channels.
+Raw `.gdf` files are loaded using `mne.io.read_raw_gdf()` with EOG channels explicitly declared (`EOG-left`, `EOG-central`, `EOG-right`). Each file contains ~672,000 timepoints across 25 channels.
 
-**Key discovery during loading:** Raw signal statistics showed saturation artifacts at -1600 µV (hardware amplifier clipping) in the continuous recording. These extreme values were present in 15 trials already flagged by the original researchers with event code 1023, and were handled in the artifact rejection step.
+**Saturation artifacts** at −1600 µV (hardware amplifier clipping) are present in some trials, already flagged by the original researchers with event code 1023. These are addressed at the amplitude rejection step.
 
 ### Step 2 — Electrode Montage Assignment
 
-GDF files do not store electrode position information. The standard 10-20 montage was manually assigned by renaming channels from the GDF naming convention (e.g., `EEG-C3`, `EEG-0`) to standard 10-20 labels (e.g., `C3`, `FC3`). This is required for topographic visualizations and ICA.
-
-Full channel mapping used:
+GDF files do not store electrode positions. Channel names are mapped from the GDF convention to standard 10-20 labels:
 
 | GDF Name | 10-20 Name | Brain Region |
 |----------|-----------|--------------|
@@ -92,62 +174,50 @@ Full channel mapping used:
 | EEG-Cz | Cz | Central midline |
 | EEG-C4 | C4 | Right motor cortex |
 | EEG-Pz | Pz | Parietal midline |
-| EEG-0 to EEG-16 | FC3–POz | Various motor/parietal |
+| EEG-0 to EEG-16 | FC3–POz | Motor/parietal areas |
 
 ### Step 3 — Bandpass Filtering (7–30 Hz)
 
-A FIR bandpass filter was applied to isolate the two frequency bands relevant to motor imagery:
+A FIR bandpass filter isolates the motor imagery frequency bands:
 
-- **Mu rhythm (8–13 Hz):** Primary motor cortex oscillation. Suppresses during movement or imagination of movement (Event Related Desynchronization, ERD).
-- **Beta rhythm (13–30 Hz):** Secondary motor rhythm. Also shows ERD during motor imagery and rebounds after (Event Related Synchronization, ERS).
+- **Mu rhythm (8–13 Hz):** Primary motor cortex oscillation — suppresses during movement imagery (ERD).
+- **Beta rhythm (13–30 Hz):** Secondary motor rhythm — also shows ERD during imagery, rebounds after (ERS).
 
-Filtering removed slow DC drift (below 7 Hz) and high-frequency muscle noise (above 30 Hz). Visual inspection of channel C3 confirmed the filtered signal shows cleaner rhythmic oscillations (±20 µV) compared to the raw signal (±30 µV with high-frequency jitter).
+Filtering removes slow DC drift (< 7 Hz) and high-frequency muscle noise (> 30 Hz).
 
 ### Step 4 — ICA Artifact Removal
 
-Independent Component Analysis (ICA) with 20 components was fitted on the filtered data to identify and remove ocular artifacts.
+Independent Component Analysis (ICA) with **20 components** identifies and removes ocular artifacts. All 3 EOG channels are used for detection:
 
-**All 3 EOG channels were used for detection** (not just one), which is critical because:
-- `EOG-left` and `EOG-right` detect horizontal eye movements
-- `EOG-central` detects vertical blinks (most powerful artifact source)
+- `EOG-left` / `EOG-right` — horizontal eye movements
+- `EOG-central` — vertical blinks (strongest artifact source)
 
-**Components identified and removed:**
-
-| Component | Detected By | Artifact Type |
-|-----------|------------|---------------|
-| ICA000 | EOG-left, EOG-central, EOG-right | Strong combined eye artifact |
-| ICA011 | EOG-central only | Blink artifact |
-
-Using all 3 EOG channels identified component 11 (blink artifact) that was missed when only checking EOG-left. After ICA application:
-- Before ICA: max amplitude ~62 µV, min ~-54 µV (on filtered data)
-- After ICA: cleaner signal with reduced frontal contamination
+Using all 3 channels is critical; using only one misses components detectable only by the others (e.g., blink components visible only in `EOG-central`). Bad components are identified per subject and excluded before applying ICA to the clean signal.
 
 ### Step 5 — Epoching
 
-The continuous clean signal was segmented into discrete trials time-locked to each motor imagery cue:
+Continuous clean signal is segmented into discrete trials time-locked to each motor imagery cue:
 
 | Parameter | Value |
 |-----------|-------|
-| Time window | -0.5s to 4.5s relative to cue |
-| Total window length | 5 seconds (1,251 timepoints at 250 Hz) |
-| Baseline correction | -0.5s to 0s (pre-cue period subtracted) |
-| Initial epochs created | 288 |
-
-Baseline correction removes any DC offset present before the cue, ensuring amplitude changes are measured relative to the pre-stimulus resting state.
+| Time window | −0.5s to +4.5s relative to cue |
+| Window length | 5 s (1,251 timepoints at 250 Hz) |
+| Baseline correction | −0.5s to 0s (pre-cue subtracted) |
+| Initial epochs | 288 per subject |
 
 ### Step 6 — Amplitude-Based Artifact Rejection
 
-After epoching, amplitude distribution analysis revealed a clear **bimodal distribution** — a natural separation between clean trials and artifact-contaminated trials:
+Trial maximum amplitude is computed across all channels and timepoints. Trials exceeding **100 µV** are rejected. This threshold was chosen by inspecting the bimodal amplitude distribution for Subject A01T, where a clear gap at ~100–120 µV separates clean trials from artifact-contaminated ones.
 
-| Threshold | Surviving Trials |
-|-----------|----------------|
-| 100 µV | 164 trials |
-| 150 µV | 226 trials |
-| 200 µV | 276 trials |
+> **Note:** MNE's built-in `reject` parameter in `mne.Epochs` does not function correctly with this dataset's internal GDF scaling. Manual rejection based on the amplitude histogram is used instead.
 
-The bimodal gap in the histogram at ~100–120 µV indicated that 100 µV is the natural rejection threshold for this subject. Trials above 100 µV belong to a second artifact-dominated population, not genuine brain signal variability.
+---
 
-**Note:** MNE's built-in `reject` parameter in `mne.Epochs` did not function correctly with this dataset's internal GDF scaling. Manual rejection based on the amplitude histogram was used instead.
+## Results
+
+All 9 subjects have been fully processed. Clean epochs are saved to `data/processed/` and all diagnostic figures to `results/figures/`.
+
+### Subject A01T (Reference Subject — Detailed Analysis)
 
 **Final clean dataset after rejection:**
 
@@ -159,81 +229,69 @@ The bimodal gap in the histogram at ~100–120 µV indicated that 100 µV is the
 | Tongue | 26 | 46 | 36% |
 | **Total** | **164** | **124** | **57%** |
 
-Right Hand was the cleanest class. Feet and Tongue showed the most artifacts — consistent with EEG literature where foot imagery causes subtle muscle tension and tongue imagery causes jaw/EMG contamination.
+**Final data shape: 164 trials × 25 channels × 1,251 timepoints**
 
-**Final data shape: (164 trials × 25 channels × 1,251 timepoints)**
+Right Hand was the cleanest class. Feet and Tongue showed the most artifacts — consistent with literature where foot imagery causes subtle muscle tension and tongue imagery causes jaw/EMG contamination.
+
+### Pipeline Summary
+
+| Stage | Trials | Notes |
+|-------|--------|-------|
+| Raw recording | 288 MI trials | Balanced: 72 per class |
+| After bandpass filter | 288 | No trials removed |
+| After ICA | 288 | 2+ artifact components removed |
+| After amplitude rejection | subject-dependent | Threshold: 100 µV |
+
+An aggregate cross-subject trial summary is available at `results/figures/all_subjects_trial_summary.png`.
 
 ---
 
-## Key Findings from EDA
+## Key EDA Findings (A01T)
 
-### 1. Channel Correlation Structure (Clean Epochs)
+### Channel Correlation Structure
+Three anatomically meaningful clusters emerge:
+- **Frontal (Fz, FC3–FC4):** Within-cluster correlation 0.84–0.97
+- **Central (C5–C6 strip):** Within-cluster correlation 0.75–0.95; C3–C4 correlation = 0.63 (reflecting opposing left/right roles)
+- **Parietal (CP3–POz):** Within-cluster correlation 0.85–0.95
 
-The correlation matrix computed on clean epochs revealed meaningful neuroanatomical structure — three distinct clusters corresponding to brain regions:
+Front-to-back correlation (Fz → POz) = 0.07 — near-complete independence, neurophysiologically correct.
 
-- **Frontal cluster (Fz, FC3, FC1, FCz, FC2, FC4):** Within-cluster correlation 0.84–0.97. These channels sit close together over frontal motor planning areas.
-- **Central cluster (C5, C3, C1, Cz, C2, C4, C6):** Within-cluster correlation 0.75–0.95. Primary motor cortex strip. C3–C4 correlation = 0.63, notably lower than their neighbors, reflecting their opposing roles in left vs right hand imagery.
-- **Parietal cluster (CP3–POz):** Within-cluster correlation 0.85–0.95. Sensory-motor integration region.
+### Power Spectral Density
+A clear peak is observed around 10–12 Hz (Mu rhythm) in the PSD, confirming the data contains the frequency content needed for motor imagery classification.
 
-The front-to-back correlation (Fz → POz = 0.07) confirms near-complete independence between frontal and parietal regions — neurophysiologically correct.
+### Scalp Topomaps (8–30 Hz Power)
+All four classes show distinct spatial power distributions:
+- **Left Hand:** Desynchronization over right hemisphere (C4 area) — contralateral ERD
+- **Right Hand:** Desynchronization over left hemisphere (C3 area) — confirms lateralized ERD
+- **Feet:** Central desynchronization at Cz — midline motor cortex
+- **Tongue:** Highest overall power, unique lateral distribution
 
-### 2. Power Spectral Density
-
-A clear peak was observed around 10–12 Hz (Mu rhythm) in the PSD across all channels. This is the signature of the idle motor cortex and confirms the data contains the frequency content needed for motor imagery classification.
-
-### 3. Scalp Topomaps (8–30 Hz Power)
-
-The most important finding: all four classes show **distinct spatial power distributions**:
-
-- **Left Hand:** Low-power region in the right hemisphere (C4 area) — contralateral motor cortex desynchronization
-- **Right Hand:** Low-power region shifts to left hemisphere (C3 area) — confirms lateralized ERD
-- **Feet:** Central low-power region at Cz — midline motor cortex, consistent with foot representation
-- **Tongue:** Highest overall power (max 293 µV²/Hz vs 225 for Left Hand), unique lateral distribution
-
-This spatial separability directly confirms that **Common Spatial Patterns (CSP) will be an effective feature extractor** for classification.
-
-### 4. Epoch Time-Domain Analysis
-
-All four classes showed mean amplitude near 0 µV across the entire trial window — this is correct. Motor imagery produces changes in oscillatory power (ERD/ERS), not raw amplitude deflections. A brief ERP response at t=0 (cue onset) was visible across all classes, consistent with the visual stimulus processing.
+This spatial separability confirms that **Common Spatial Patterns (CSP)** will be an effective feature extractor.
 
 ---
 
 ## Limitations
 
-- **43% trial loss:** Removing 124 of 288 trials is substantial. Subject A01T shows higher artifact rates in Feet and Tongue classes, which may reflect genuine subject-specific EMG contamination during those imagery tasks.
-- **Class imbalance after rejection:** 26 Tongue vs 61 Right Hand trials (1:2.3 ratio) requires balanced class weighting in the ML classifier.
-- **Single subject:** This analysis covers only A01T. The 9-subject dataset will show different rejection rates and spatial patterns per subject.
-- **ICA limitations:** The saturation artifacts (-1600 µV) in the raw data partially interfered with ICA decomposition, explaining why only 2 components were cleanly identified.
-- **No re-referencing:** Common Average Reference (CAR) was not applied, which could further improve signal quality before classification.
-
----
-
-## Results Summary
-
-| Stage | Trials | Notes |
-|-------|--------|-------|
-| Raw recording | 288 MI trials | Perfectly balanced, 72 per class |
-| After bandpass filter | 288 | No trials removed, signal cleaned |
-| After ICA | 288 | 2 artifact components removed |
-| After amplitude rejection | 164 | 124 trials dropped at 100 µV threshold |
-| **Final clean data** | **164** | **Shape: 164 × 25 × 1251** |
+- **Trial loss:** Removing ~43% of trials for A01T is substantial. Per-subject dropout rates vary (see `results/figures/`).
+- **Class imbalance after rejection:** 26 Tongue vs 61 Right Hand trials for A01T (1:2.3 ratio) — requires balanced class weighting in classifiers.
+- **ICA completeness:** Saturation artifacts (−1600 µV) partially interfere with ICA decomposition; some residual artifacts may remain.
+- **No re-referencing:** Common Average Reference (CAR) was not applied — this could further improve signal quality.
+- **Evaluation sessions:** Only training sessions (`T`) are preprocessed. Evaluation sessions (`E`) are available in `data/raw/` but not yet processed.
 
 ---
 
 ## Next Steps
 
-1. **Feature Extraction — Common Spatial Patterns (CSP):** Learn optimal spatial filters that maximize variance differences between classes. CSP is the standard approach for motor imagery given the spatial separability confirmed in topomaps.
-
-2. **Classification — SVM with RBF kernel:** Train on CSP features with `class_weight='balanced'` to handle the trial imbalance. Expected accuracy >70% for Subject A01T based on literature benchmarks.
-
-3. **Alternative models:** LDA (fast baseline), Random Forest, and EEGNet (deep learning) for comparison.
-
-4. **Cross-subject generalization:** Repeat pipeline for all 9 subjects and evaluate whether a single model can generalize across subjects.
+1. **Feature Extraction — Common Spatial Patterns (CSP):** Learn spatial filters that maximize class variance differences. Output goes to `data/features/`.
+2. **Classification — SVM with RBF kernel:** Train on CSP features with `class_weight='balanced'`. Expected accuracy > 70% for A01T per literature benchmarks.
+3. **Alternative models:** LDA (fast baseline), Random Forest, and EEGNet (deep learning).
+4. **Cross-subject generalization:** Evaluate whether a single model generalizes across all 9 subjects.
+5. **Evaluation sessions:** Process `A0xE.gdf` files for held-out evaluation.
 
 ---
 
 ## References
 
-- Tangermann, M., Müller, K. R., Aertsen, A., Birbaumer, N., Braun, C., Brunner, C., ... & Blankertz, B. (2012). Review of the BCI Competition IV. *Frontiers in Neuroscience*, 6, 55.
+- Tangermann, M., Müller, K. R., Aertsen, A., et al. (2012). Review of the BCI Competition IV. *Frontiers in Neuroscience*, 6, 55.
 - Pfurtscheller, G., & Lopes da Silva, F. H. (1999). Event-related EEG/MEG synchronization and desynchronization: basic principles. *Clinical Neurophysiology*, 110(11), 1842-1857.
 - Gramfort, A., et al. (2013). MEG and EEG data analysis with MNE-Python. *Frontiers in Neuroscience*, 7, 267.
