@@ -264,7 +264,7 @@ def plot_csp_variance_explained(X_csp, y, subject_id, figures_path='../results/f
     plt.show()
 
 
-def visualize_features(X_csp, y, csp, epochs_info, subject_id, figures_path='../results/figures/'):
+def visualize_features(X_csp, y, csp, epochs_info, subject_id, figures_path='../results/figures/features'):
     print(f"\nGenerating feature plots for {subject_id}...")
     plot_csp_patterns(csp, epochs_info, subject_id, figures_path)
     plot_csp_filters(csp, epochs_info, subject_id, figures_path)

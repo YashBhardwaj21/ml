@@ -249,7 +249,7 @@ def plot_psd(raw, raw_clean, subject_id, figures_path='../results/figures/'):
     plt.show()
 
 
-def visualize_subject(raw, raw_clean, epochs, epochs_final, subject_id, figures_path='../results/figures/'):
+def visualize_subject(raw, raw_clean, epochs, epochs_final, subject_id, figures_path='../results/figures/preprocessing/'):
     print(f"\nGenerating plots for {subject_id}...")
     plot_amplitude_histogram(epochs, subject_id, figures_path)
     plot_trial_distribution(epochs_final, subject_id, figures_path)
