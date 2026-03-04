@@ -77,20 +77,20 @@ def extract_csp_features(epochs_final, n_components=8, tmin=0.5, tmax=3.5):
     return X_csp, y, csp_mu, csp_beta, scaler, le
 
 
-def save_features(subject_id, X_csp, y, save_path='../data/features/'):
+def save_features(subject_id, X_csp, y, save_path='../data/features/csp/'):
     save_file = f'{save_path}{subject_id}_features.npz'
     np.savez(save_file, X=X_csp, y=y)
     print(f"Features saved to {save_file}")
 
 
-def load_features(subject_id, load_path='../data/features/'):
+def load_features(subject_id, load_path='../data/features/csp/'):
     load_file = f'{load_path}{subject_id}_features.npz'
     data = np.load(load_file)
     print(f"Loaded features for {subject_id}: X={data['X'].shape}, y={data['y'].shape}")
     return data['X'], data['y']
 
 
-def plot_csp_patterns(csp, epochs_info, subject_id, figures_path='../results/figures/'):
+def plot_csp_patterns(csp, epochs_info, subject_id, figures_path='../results/figures/csp/'):
     """Topographic maps of all 4 CSP spatial patterns"""
     fig, axes = plt.subplots(1, 4, figsize=(16, 4))
 
@@ -111,7 +111,7 @@ def plot_csp_patterns(csp, epochs_info, subject_id, figures_path='../results/fig
     plt.show()
 
 
-def plot_csp_filters(csp, epochs_info, subject_id, figures_path='../results/figures/'):
+def plot_csp_filters(csp, epochs_info, subject_id, figures_path='../results/figures/csp/'):
     """Topographic maps of all 4 CSP spatial filters"""
     fig, axes = plt.subplots(1, 4, figsize=(16, 4))
 
@@ -132,7 +132,7 @@ def plot_csp_filters(csp, epochs_info, subject_id, figures_path='../results/figu
     plt.show()
 
 
-def plot_csp_feature_distribution(X_csp, y, subject_id, figures_path='../results/figures/'):
+def plot_csp_feature_distribution(X_csp, y, subject_id, figures_path='../results/figures/csp/'):
     """Distribution of each CSP feature value per class"""
     class_names = ['Left Hand', 'Right Hand', 'Feet', 'Tongue']
     colors      = ['blue', 'red', 'green', 'purple']
@@ -159,7 +159,7 @@ def plot_csp_feature_distribution(X_csp, y, subject_id, figures_path='../results
     plt.show()
 
 
-def plot_csp_scatter(X_csp, y, subject_id, figures_path='../results/figures/'):
+def plot_csp_scatter(X_csp, y, subject_id, figures_path='../results/figures/csp/'):
     """Scatter plots of CSP feature pairs — shows class separability"""
     class_names = ['Left Hand', 'Right Hand', 'Feet', 'Tongue']
     colors      = ['blue', 'red', 'green', 'purple']
@@ -184,7 +184,7 @@ def plot_csp_scatter(X_csp, y, subject_id, figures_path='../results/figures/'):
     plt.show()
 
 
-def plot_csp_feature_boxplot(X_csp, y, subject_id, figures_path='../results/figures/'):
+def plot_csp_feature_boxplot(X_csp, y, subject_id, figures_path='../results/figures/csp/'):
     """Boxplot of each CSP feature per class — shows median and spread"""
     class_names = ['Left Hand', 'Right Hand', 'Feet', 'Tongue']
     colors      = ['blue', 'red', 'green', 'purple']
@@ -212,7 +212,7 @@ def plot_csp_feature_boxplot(X_csp, y, subject_id, figures_path='../results/figu
     plt.show()
 
 
-def plot_csp_feature_correlation(X_csp, subject_id, figures_path='../results/figures/'):
+def plot_csp_feature_correlation(X_csp, subject_id, figures_path='../results/figures/csp/'):
     """Correlation between CSP features — should be low for good features"""
     corr = np.corrcoef(X_csp.T)
 
@@ -233,7 +233,7 @@ def plot_csp_feature_correlation(X_csp, subject_id, figures_path='../results/fig
     plt.show()
 
 
-def plot_csp_variance_explained(X_csp, y, subject_id, figures_path='../results/figures/'):
+def plot_csp_variance_explained(X_csp, y, subject_id, figures_path='../results/figures/csp/'):
     """Mean feature value per class per component — shows which features discriminate which classes"""
     class_names  = ['Left Hand', 'Right Hand', 'Feet', 'Tongue']
     colors       = ['blue', 'red', 'green', 'purple']
@@ -264,7 +264,7 @@ def plot_csp_variance_explained(X_csp, y, subject_id, figures_path='../results/f
     plt.show()
 
 
-def visualize_features(X_csp, y, csp, epochs_info, subject_id, figures_path='../results/figures/features/'):
+def visualize_features(X_csp, y, csp, epochs_info, subject_id, figures_path='../results/figures/features/csp/'):
     print(f"\nGenerating feature plots for {subject_id}...")
     plot_csp_patterns(csp, epochs_info, subject_id, figures_path)
     plot_csp_filters(csp, epochs_info, subject_id, figures_path)
