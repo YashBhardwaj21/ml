@@ -61,7 +61,7 @@ def evaluate_model(model, X, y, n_splits=5):
     }
 
 
-def save_model(model, subject_id, model_name, save_path='../results/models/'):
+def save_model(model, subject_id, model_name, save_path='../results/models/baseline/'):
     os.makedirs(save_path, exist_ok=True)
     path = f'{save_path}{subject_id}_{model_name}.pkl'
     with open(path, 'wb') as f:
@@ -69,14 +69,14 @@ def save_model(model, subject_id, model_name, save_path='../results/models/'):
     print(f"Model saved to {path}")
 
 
-def load_model(subject_id, model_name, load_path='../results/models/'):
+def load_model(subject_id, model_name, load_path='../results/models/baseline'):
     path = f'{load_path}{subject_id}_{model_name}.pkl'
     with open(path, 'rb') as f:
         model = pickle.load(f)
     return model
 
 
-def save_metrics(all_results, subjects, save_path='../results/metrics/'):
+def save_metrics(all_results, subjects, save_path='../results/metrics/baseline'):
     os.makedirs(save_path, exist_ok=True)
 
     # Accuracy summary CSV
@@ -130,7 +130,7 @@ def save_metrics(all_results, subjects, save_path='../results/metrics/'):
     return acc_df, f1_df, fold_df
 
 
-def plot_accuracy_bars(all_results, subjects, figures_path='../results/figures/training/'):
+def plot_accuracy_bars(all_results, subjects, figures_path='../results/figures/training/baseline/'):
     svm_means = [all_results[s]['SVM']['mean'] * 100 for s in subjects]
     lda_means = [all_results[s]['LDA']['mean'] * 100 for s in subjects]
     rf_means  = [all_results[s]['RF']['mean']  * 100 for s in subjects]
@@ -161,7 +161,7 @@ def plot_accuracy_bars(all_results, subjects, figures_path='../results/figures/t
     plt.show()
 
 
-def plot_confusion_matrices(all_results, subjects, model_name='SVM', figures_path='../results/figures/training/'):
+def plot_confusion_matrices(all_results, subjects, model_name='SVM', figures_path='../results/figures/training/baseline/'):
     fig, axes = plt.subplots(3, 3, figsize=(18, 15))
 
     for ax, subject_id in zip(axes.flat, subjects):
@@ -191,7 +191,7 @@ def plot_confusion_matrices(all_results, subjects, model_name='SVM', figures_pat
     plt.show()
 
 
-def plot_f1_heatmap(all_results, subjects, figures_path='../results/figures/training/'):
+def plot_f1_heatmap(all_results, subjects, figures_path='../results/figures/training/baseline/'):
     fig, axes = plt.subplots(1, 3, figsize=(20, 7))
 
     for ax, model_name in zip(axes, ['SVM', 'LDA', 'RF']):
@@ -223,7 +223,7 @@ def plot_f1_heatmap(all_results, subjects, figures_path='../results/figures/trai
     plt.show()
 
 
-def plot_per_fold_scores(all_results, subjects, figures_path='../results/figures/training/'):
+def plot_per_fold_scores(all_results, subjects, figures_path='../results/figures/training/baseline/'):
     fig, axes = plt.subplots(3, 3, figsize=(18, 15))
 
     for ax, subject_id in zip(axes.flat, subjects):
@@ -251,7 +251,7 @@ def plot_per_fold_scores(all_results, subjects, figures_path='../results/figures
     plt.show()
 
 
-def plot_model_comparison_box(all_results, subjects, figures_path='../results/figures/training/'):
+def plot_model_comparison_box(all_results, subjects, figures_path='../results/figures/training/baseline/'):
     svm_scores = [all_results[s]['SVM']['mean'] * 100 for s in subjects]
     lda_scores = [all_results[s]['LDA']['mean'] * 100 for s in subjects]
     rf_scores  = [all_results[s]['RF']['mean']  * 100 for s in subjects]
@@ -278,7 +278,7 @@ def plot_model_comparison_box(all_results, subjects, figures_path='../results/fi
     plt.show()
 
 
-def plot_class_accuracy(all_results, subjects, figures_path='../results/figures/training/'):
+def plot_class_accuracy(all_results, subjects, figures_path='../results/figures/training/baseline/'):
     fig, axes = plt.subplots(1, 3, figsize=(20, 6))
 
     for ax, model_name in zip(axes, ['SVM', 'LDA', 'RF']):
@@ -310,7 +310,7 @@ def plot_class_accuracy(all_results, subjects, figures_path='../results/figures/
     plt.show()
 
 
-def plot_best_subject_detail(all_results, subjects, figures_path='../results/figures/training/'):
+def plot_best_subject_detail(all_results, subjects, figures_path='../results/figures/training/baseline/'):
     # Find best subject by SVM accuracy
     best_subject = max(subjects, key=lambda s: all_results[s]['SVM']['mean'])
     print(f"Best subject: {best_subject} — {all_results[best_subject]['SVM']['mean']*100:.1f}%")
@@ -344,7 +344,7 @@ def plot_best_subject_detail(all_results, subjects, figures_path='../results/fig
     plt.show()
 
 
-def run_all_visualizations(all_results, subjects, figures_path='../results/figures/training/'):
+def run_all_visualizations(all_results, subjects, figures_path='../results/figures/training/baseline/'):
     print("\nGenerating all training visualizations...")
     plot_accuracy_bars(all_results, subjects, figures_path)
     plot_confusion_matrices(all_results, subjects, 'SVM', figures_path)
