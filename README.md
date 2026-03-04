@@ -2,11 +2,14 @@
 
 ## Overview
 
-This project implements a complete, **multi-subject** EEG signal processing and classification pipeline for Brain-Computer Interface (BCI) applications using the **BCI Competition IV Dataset 2a**. The pipeline covers all 9 subjects (A01–A09) across three stages:
+This project implements a complete, multi-subject EEG signal processing and classification pipeline for Brain-Computer Interface (BCI) applications using the **BCI Competition IV Dataset 2a**. The pipeline covers all **9 subjects (A01–A09)** across three sequential stages, each with a baseline and an improved iteration:
 
-1. **Preprocessing** — ICA artifact removal, bandpass filtering, epoching, amplitude rejection
-2. **Feature Extraction** — Common Spatial Patterns (CSP) on Mu + Beta bands
-3. **Classification** — SVM, LDA, and Random Forest with 5-fold stratified cross-validation
+| Stage | Notebook | Module |
+|-------|----------|--------|
+| 1. Preprocessing | `preprocessing.ipynb` | `src/preprocessing.py` |
+| 2. Feature Extraction | `feature_extraction.ipynb` | `src/features.py` |
+| 3a. Baseline Classification | `training_baseline.ipynb` | `src/models.py` |
+| 3b. Improved Classification | `training_improved.ipynb` | `src/models.py` |
 
 ---
 
@@ -35,7 +38,7 @@ This project implements a complete, **multi-subject** EEG signal processing and 
 | Both Feet | 771 | 72 |
 | Tongue | 772 | 72 |
 
-Each training session contains 288 balanced trials across 9 experimental runs.
+288 balanced trials per subject across 9 experimental runs. **Chance level = 25%.**
 
 ---
 
@@ -44,20 +47,21 @@ Each training session contains 288 balanced trials across 9 experimental runs.
 ```
 ml/
 ├── data/
-│   ├── raw/                              # Raw .gdf files — 18 total (T + E for A01–A09)
-│   ├── processed/                        # Clean epoched data — A01T–A09T_clean_epo.fif
-│   └── features/                         # CSP feature arrays — A01T–A09T_features.npz
+│   ├── raw/                              # 18 .gdf files — T + E sessions for A01–A09
+│   ├── processed/                        # A01T–A09T_clean_epo.fif (preprocessed epochs)
+│   └── features/                         # A01T–A09T_features.npz (CSP feature arrays)
 │
 ├── notebooks/
 │   ├── bci.ipynb                         # Original single-subject EDA (A01T)
-│   ├── preprocessing.ipynb               # Multi-subject preprocessing (A01–A09)
-│   ├── feature_extraction.ipynb          # Multi-subject CSP feature extraction (A01–A09)
-│   └── training.ipynb                    # Multi-subject classifier training (A01–A09)
+│   ├── preprocessing.ipynb               # Multi-subject preprocessing
+│   ├── feature_extraction.ipynb          # Multi-subject CSP feature extraction
+│   ├── training_baseline.ipynb           # Baseline classifiers (SVM, LDA, RF)
+│   └── training_improved.ipynb           # Improved classifiers (tuned SVM, LDA, RF + Ensemble)
 │
 ├── src/
 │   ├── __init__.py
-│   ├── preprocessing.py                  # Preprocessing module
-│   ├── features.py                       # Feature extraction module
+│   ├── preprocessing.py                  # Preprocessing pipeline module
+│   ├── features.py                       # CSP feature extraction module
 │   └── models.py                         # Classifier training & evaluation module
 │
 ├── results/
@@ -65,15 +69,18 @@ ml/
 │   │   ├── preprocessing/                # 55 plots — 6 per subject + 1 aggregate
 │   │   ├── features/                     # 64 plots — 7 per subject + 1 aggregate
 │   │   └── training/
-│   │       └── baseline/                 # 9 aggregate training plots
+│   │       ├── baseline/                 # 9 aggregate plots
+│   │       └── improved/                 # 3 aggregate comparison plots
 │   ├── metrics/
-│   │   └── baseline/                     # 3 CSV files with accuracy, F1, and fold scores
+│   │   ├── baseline/                     # accuracy_summary.csv, per_class_metrics.csv, per_fold_scores.csv
+│   │   └── improved/                     # improved_accuracy_summary.csv, baseline_vs_improved.csv
 │   └── models/
-│       └── baseline/                     # 27 trained model files (3 models × 9 subjects)
+│       ├── baseline/                     # 27 .pkl files — SVM, LDA, RF × 9 subjects
+│       └── improved/                     # 36 .pkl files — SVM_tuned, LDA_improved, RF_improved, Ensemble × 9 subjects
 │
-├── bci_script.md                         # Notebook walkthrough / documentation
-├── parse_nb.py                           # Utility: extracts code cells from notebooks
-├── requirements.txt                      # Pinned dependencies (Python 3.13)
+├── bci_script.md
+├── parse_nb.py
+├── requirements.txt
 └── README.md
 ```
 
@@ -81,7 +88,7 @@ ml/
 
 ## Installation
 
-**Python version:** 3.13
+**Python:** 3.13
 
 ```bash
 pip install -r requirements.txt
@@ -95,159 +102,201 @@ pip install -r requirements.txt
 | `scikit-learn` | 1.8.0 | CSP, classifiers, cross-validation |
 | `pandas` | 3.0.1 | Metrics CSVs |
 | `matplotlib` | 3.10.8 | Plotting |
-| `seaborn` | 0.13.2 | Heatmaps and statistical plots |
+| `seaborn` | 0.13.2 | Heatmaps and correlation plots |
 | `ipykernel` | 7.2.0 | Jupyter support |
-
----
-
-## Source Modules
-
-### `src/preprocessing.py`
-
-End-to-end preprocessing of raw `.gdf` files into clean, epoched `.fif` files.
-
-| Function | Description |
-|----------|-------------|
-| `load_subject(subject_id, data_path)` | Loads `.gdf` with EOG channels declared |
-| `apply_filter(raw)` | 7–30 Hz FIR bandpass |
-| `set_montage(raw_filtered)` | Maps GDF channel names → standard 10-20 labels |
-| `run_ica(raw_filtered)` | 20-component ICA; removes artifacts using all 3 EOG channels |
-| `create_epochs(raw_clean)` | Epochs (−0.5s to +4.5s), baseline-corrected, rejects trials > 100 µV |
-| `visualize_subject(...)` | Generates all 6 preprocessing plots |
-| `preprocess_subject(subject_id, ...)` | End-to-end wrapper — saves `.fif` to `data/processed/` |
-
-**Output plots** → `results/figures/preprocessing/`:
-`_amplitude_histogram`, `_trial_distribution`, `_correlation`, `_epoch_waveforms`, `_topomaps`, `_psd`
-
----
-
-### `src/features.py`
-
-Extracts CSP features from preprocessed epochs.
-
-| Function | Description |
-|----------|-------------|
-| `extract_csp_features(epochs_final, n_components, tmin, tmax)` | Extracts 16-dim normalized CSP feature vector per trial |
-| `save_features(subject_id, X_csp, y, save_path)` | Saves `X` and `y` as `.npz` to `data/features/` |
-| `load_features(subject_id, load_path)` | Loads previously saved feature file |
-| `visualize_features(X_csp, y, csp, epochs_info, subject_id, ...)` | Generates all 7 CSP diagnostic plots |
-
-**Output plots** → `results/figures/features/`:
-`_csp_patterns`, `_csp_filters`, `_csp_feature_distribution`, `_csp_scatter`, `_csp_boxplot`, `_csp_feature_correlation`, `_csp_mean_per_class`
-
----
-
-### `src/models.py`
-
-Classifier training, evaluation, persistence, and visualization.
-
-| Function | Description |
-|----------|-------------|
-| `build_svm()` | SVM — RBF kernel, `class_weight='balanced'`, `probability=True` |
-| `build_lda()` | LDA — `solver='lsqr'`, `shrinkage='auto'` |
-| `build_rf()` | Random Forest — 200 estimators, `class_weight='balanced'` |
-| `evaluate_model(model, X, y, n_splits=5)` | 5-fold stratified CV; returns scores, confusion matrix, classification report |
-| `save_model(model, subject_id, model_name, save_path)` | Serializes trained model to `.pkl` |
-| `load_model(subject_id, model_name, load_path)` | Loads a saved `.pkl` model |
-| `save_metrics(all_results, subjects, save_path)` | Writes 3 CSVs: accuracy summary, per-class metrics, per-fold scores |
-| `run_all_visualizations(all_results, subjects, figures_path)` | Generates all 9 training plots |
-
-**Output plots** → `results/figures/training/baseline/`:
-
-| File | Description |
-|------|-------------|
-| `accuracy_bars.png` | Bar chart — mean ± std accuracy across all subjects and models |
-| `confusion_matrices_SVM.png` | 3×3 grid of normalized confusion matrices (SVM) |
-| `confusion_matrices_LDA.png` | 3×3 grid of normalized confusion matrices (LDA) |
-| `confusion_matrices_RF.png` | 3×3 grid of normalized confusion matrices (RF) |
-| `f1_heatmap.png` | F1 score heatmap — subjects × classes, all 3 models |
-| `per_fold_scores.png` | Per-fold accuracy line plot per subject |
-| `model_comparison_boxplot.png` | Boxplot — accuracy distribution across subjects per model |
-| `recall_heatmap.png` | Recall heatmap — subjects × classes, all 3 models |
-| `best_subject_detail_A03T.png` | Confusion matrices for best subject across all 3 models |
 
 ---
 
 ## Pipeline
 
-### Stage 1 — Preprocessing
+### Stage 1 — Preprocessing (`src/preprocessing.py`)
+
+Converts raw `.gdf` files into clean, epoched `.fif` files ready for feature extraction.
 
 | Step | Detail |
 |------|--------|
-| Load | `.gdf` with EOG channels declared |
-| Filter | 7–30 Hz FIR bandpass — isolates Mu (8–13 Hz) and Beta (13–30 Hz) |
-| Montage | GDF labels → standard 10-20 names |
-| ICA | 20 components; all 3 EOG channels used for artifact detection |
-| Epoch | −0.5s to +4.5s, baseline corrected to −0.5s–0s |
-| Reject | Manual 100 µV threshold (MNE's built-in `reject` param doesn't work with this dataset's GDF scaling) |
-| Save | `data/processed/{id}_clean_epo.fif` |
+| **Load** | `mne.io.read_raw_gdf()` with `EOG-left`, `EOG-central`, `EOG-right` declared |
+| **Bandpass filter** | 7–30 Hz FIR — isolates Mu (8–13 Hz) and Beta (13–30 Hz) bands |
+| **Montage** | GDF channel labels → standard 10-20 names (required for ICA and topographic plots) |
+| **ICA** | 20 components; all 3 EOG channels used for artifact detection. Catches blink artifacts missed by single-channel detection |
+| **Epoch** | −0.5s to +4.5s per MI cue; baseline corrected to −0.5s–0s |
+| **Amplitude rejection** | Manual 100 µV threshold — MNE's built-in `reject` parameter fails with this dataset's GDF amplitude scaling |
+| **Save** | `data/processed/{id}_clean_epo.fif` |
 
-### Stage 2 — Feature Extraction
+**Output figures** → `results/figures/preprocessing/`:
+`_amplitude_histogram`, `_trial_distribution`, `_correlation`, `_epoch_waveforms`, `_topomaps`, `_psd`
 
-| Step | Detail |
-|------|--------|
-| Crop | Active MI window: 0.5s to 3.5s |
-| Band-split | Separate Mu (8–13 Hz) and Beta (13–30 Hz) filtering |
-| CSP (Mu) | 8 components, `reg=0.05`; auto-raises to `0.2` on NaN |
-| CSP (Beta) | 8 components, `reg=0.05`; auto-raises to `0.2` on NaN |
-| Concatenate | Mu + Beta → **16 features per trial** |
-| Normalize | `StandardScaler` (zero mean, unit variance) |
-| Save | `data/features/{id}_features.npz` — keys: `X` (n_trials × 16), `y` |
+---
 
-### Stage 3 — Classification
+### Stage 2 — Feature Extraction (`src/features.py`)
+
+Extracts Mu + Beta band CSP features from clean epochs.
 
 | Step | Detail |
 |------|--------|
-| Load | `data/features/{id}_features.npz` |
-| Models | SVM (RBF), LDA (shrinkage), Random Forest (200 trees) |
-| Evaluation | 5-fold stratified cross-validation (accuracy, CM, classification report) |
-| Save models | `results/models/baseline/{id}_{model}.pkl` |
-| Save metrics | `results/metrics/baseline/` — 3 CSV files |
+| **Crop** | Active MI window: 0.5s → 3.5s (removes cue response artefact and post-imagery period) |
+| **Band-split** | Separate FIR filtering into Mu (8–13 Hz) and Beta (13–30 Hz) |
+| **NaN/Inf check** | Corrupt trials removed before CSP fitting |
+| **CSP — Mu** | `n_components=8`, `reg=0.05` (auto-raised to 0.2 on NaN output) |
+| **CSP — Beta** | `n_components=8`, `reg=0.05` (auto-raised to 0.2 on NaN output) |
+| **Concatenate** | Mu + Beta features → **16 features per trial** |
+| **Normalize** | `StandardScaler` (zero mean, unit variance) |
+| **Save** | `data/features/{id}_features.npz` — `X`: (n_trials × 16), `y`: (n_trials,) |
+
+**Output figures** → `results/figures/features/`:
+`_csp_patterns`, `_csp_filters`, `_csp_feature_distribution`, `_csp_scatter`, `_csp_boxplot`, `_csp_feature_correlation`, `_csp_mean_per_class`
+
+---
+
+### Stage 3a — Baseline Classification (`training_baseline.ipynb`)
+
+Default hyperparameters, no ensembling.
+
+| Model | Configuration |
+|-------|--------------|
+| **SVM** | `kernel='rbf'`, `class_weight='balanced'`, `probability=True` |
+| **LDA** | `solver='lsqr'`, `shrinkage='auto'` |
+| **RF** | `n_estimators=200`, `class_weight='balanced'` |
+
+Evaluation: **5-fold stratified cross-validation**
+
+**Output:**
+- Models → `results/models/baseline/{id}_{SVM|LDA|RF}.pkl`
+- Metrics → `results/metrics/baseline/`
+  - `accuracy_summary.csv` — mean ± std per subject
+  - `per_class_metrics.csv` — precision, recall, F1 per class per subject
+  - `per_fold_scores.csv` — accuracy at each fold
+- Figures → `results/figures/training/baseline/`
+  - `accuracy_bars.png`, `confusion_matrices_{SVM|LDA|RF}.png`, `f1_heatmap.png`, `per_fold_scores.png`, `model_comparison_boxplot.png`, `recall_heatmap.png`, `best_subject_detail_A03T.png`
+
+---
+
+### Stage 3b — Improved Classification (`training_improved.ipynb`)
+
+Hyperparameter-tuned models with a soft-voting Ensemble.
+
+| Model | Improvements over Baseline |
+|-------|---------------------------|
+| **SVM_tuned** | Grid-searched `C` and `gamma` per subject |
+| **LDA_improved** | Same architecture; benefits from tuned feature preprocessing |
+| **RF_improved** | Grid-searched `n_estimators` and `max_depth` per subject |
+| **Ensemble** | Soft-voting over SVM_tuned + LDA_improved + RF_improved |
+
+**Output:**
+- Models → `results/models/improved/{id}_{SVM_tuned|LDA_improved|RF_improved|Ensemble}.pkl`
+- Metrics → `results/metrics/improved/`
+  - `improved_accuracy_summary.csv` — mean ± std per subject per improved model
+  - `baseline_vs_improved.csv` — per-subject SVM baseline vs tuned comparison
+- Figures → `results/figures/training/improved/`
+  - `baseline_vs_improved_comparison.png`
+  - `confusion_matrices_ensemble_improved.png`
+  - `f1_heatmap_improved.png`
 
 ---
 
 ## Results
 
-### Baseline Classification Accuracy (5-fold CV %)
+### Baseline — 5-fold CV Accuracy (%)
 
 | Subject | SVM | LDA | RF |
 |---------|-----|-----|----|
 | A01T | 84.19 ± 4.37 | 83.54 ± 6.22 | 81.12 ± 3.44 |
 | A02T | 58.81 ± 3.27 | 60.19 ± 2.61 | 58.82 ± 5.97 |
-| **A03T** | **87.71 ± 3.75** | **86.02 ± 5.03** | **87.68 ± 2.98** |
+| A03T | 87.71 ± 3.75 | 86.02 ± 5.03 | 87.68 ± 2.98 |
 | A04T | 55.36 ± 2.34 | 57.65 ± 5.88 | 54.22 ± 5.92 |
 | A05T | 54.31 ± 4.22 | 55.14 ± 1.06 | 57.48 ± 5.85 |
 | A06T | 53.57 ± 3.68 | 55.68 ± 3.11 | 49.67 ± 4.21 |
 | A07T | 82.16 ± 4.12 | 81.45 ± 8.95 | 76.60 ± 11.48 |
-| **A08T** | **87.16 ± 4.91** | **87.58 ± 5.18** | **83.83 ± 4.00** |
+| A08T | 87.16 ± 4.91 | 87.58 ± 5.18 | 83.83 ± 4.00 |
 | A09T | 62.59 ± 5.58 | 64.96 ± 8.48 | 62.03 ± 5.80 |
+| **Avg** | **69.5** | **70.2** | **67.9** |
 
-**Chance level: 25%** (4-class classification)
+---
 
-- Best subject: **A03T** (SVM: 87.71%)
-- High performers (>80%): A01T, A03T, A07T, A08T
-- Low performers (<60%): A04T, A05T, A06T — likely high per-subject artifact rates
-- SVM and LDA are generally competitive; RF shows higher variance (especially A07T)
+### Improved — 5-fold CV Accuracy (%)
+
+| Subject | SVM_tuned | LDA_improved | RF_improved | Ensemble |
+|---------|-----------|--------------|-------------|----------|
+| A01T | 89.8 ± 3.6 | 83.6 ± 4.9 | 87.3 ± 4.0 | 88.9 ± 3.1 |
+| A02T | 63.4 ± 6.2 | 61.6 ± 6.0 | 61.2 ± 6.9 | 65.2 ± 5.2 |
+| A03T | **91.7 ± 2.5** | 87.7 ± 4.9 | **91.7 ± 1.2** | 91.2 ± 3.0 |
+| A04T | 58.1 ± 6.9 | 57.7 ± 4.3 | 57.0 ± 3.2 | 55.9 ± 3.1 |
+| A05T | 70.3 ± 5.2 | 58.9 ± 3.6 | 69.1 ± 9.6 | 69.6 ± 7.6 |
+| A06T | 54.5 ± 5.7 | 54.1 ± 6.5 | 52.1 ± 2.4 | 55.2 ± 4.2 |
+| A07T | 84.0 ± 8.1 | 84.0 ± 5.4 | 75.0 ± 12.6 | 82.7 ± 5.9 |
+| A08T | **90.2 ± 2.9** | 88.8 ± 4.2 | 87.3 ± 3.2 | 89.9 ± 3.7 |
+| A09T | 64.6 ± 6.7 | 66.1 ± 5.3 | 66.6 ± 3.7 | 68.2 ± 6.1 |
+| **Avg** | **74.1** | **71.4** | **71.9** | **74.1** |
+
+---
+
+### Baseline SVM vs Tuned SVM — Per-Subject Gains
+
+| Subject | Baseline SVM | Tuned SVM | Δ |
+|---------|-------------|-----------|---|
+| A01T | 84.2% | 89.8% | **+5.6%** |
+| A02T | 58.8% | 63.4% | **+4.6%** |
+| A03T | 87.7% | 91.7% | **+4.0%** |
+| A04T | 55.4% | 58.1% | **+2.7%** |
+| A05T | 54.3% | 70.3% | **+16.0%** ⬆ biggest gain |
+| A06T | 53.6% | 54.5% | +0.9% |
+| A07T | 82.2% | 84.0% | +1.9% |
+| A08T | 87.2% | 90.2% | **+3.1%** |
+| A09T | 62.6% | 64.6% | +2.0% |
+| **Avg** | **69.5%** | **74.1%** | **+4.6%** |
+
+---
+
+## Analysis
+
+### Subject Variability
+The dataset shows large cross-subject variance (53%–92%). This is typical for motor imagery BCI — subjects differ substantially in how clearly their Mu/Beta rhythms reflect motor imagery. High performers (A01T, A03T, A07T, A08T) consistently score >80% across all models. Low performers (A04T, A05T, A06T) likely have weaker or noisier ERD patterns, and may benefit from subject-specific preprocessing tuning.
+
+### Model Comparison
+- **SVM_tuned** is the strongest individual model overall (avg 74.1%), benefiting most from per-subject `C`/`gamma` search. Particularly large gains on A05T (+16%) suggest the default RBF kernel was poorly calibrated for that subject.
+- **Ensemble** matches SVM_tuned on average (74.1%) with generally lower variance — useful for deployment where consistency matters.
+- **LDA_improved** (avg 71.4%) is competitive with much lower complexity, making it a good first-choice baseline.
+- **RF_improved** shows the highest within-subject fold variance (A07T: ±12.6%), suggesting sensitivity to small training set sizes after trial rejection.
+
+### Low-Performing Subjects
+A04T (58%), A05T (54–70%), A06T (54%) see limited improvement from tuning alone. The underlying cause is likely higher artifact rates at preprocessing time leading to fewer and noisier clean trials, not model capacity.
+
+---
+
+## Key EDA Findings
+
+### Scalp Topomaps — Spatial Separability (A01T)
+All four classes show distinct 8–30 Hz power distributions, confirming CSP effectiveness:
+- **Left Hand:** Right-hemisphere desynchronization (C4 area) — contralateral ERD
+- **Right Hand:** Left-hemisphere desynchronization (C3 area) — lateralized ERD
+- **Feet:** Central desynchronization at Cz — midline motor cortex
+- **Tongue:** Highest overall power, unique lateral distribution
+
+### Channel Correlation (A01T)
+Three anatomical clusters in clean epochs:
+- **Frontal** (Fz, FC3–FC4): 0.84–0.97 within-cluster correlation
+- **Central** (C5–C6 strip): 0.75–0.95; C3–C4 = 0.63 (opposing hemispheric roles)
+- **Parietal** (CP3–POz): 0.85–0.95; Front-to-back (Fz→POz) = 0.07
 
 ---
 
 ## Limitations
 
-- **Trial loss:** ~43% average dropout per subject from amplitude rejection — Feet and Tongue classes most affected
-- **Class imbalance post-rejection:** Requires `class_weight='balanced'` in all classifiers
-- **Subject variability:** Accuracy ranges from 53% to 88% — pipeline improvements (re-referencing, adaptive thresholding) may help low-performing subjects
-- **Evaluation sessions:** `A0xE.gdf` files are in `data/raw/` but not yet processed
-- **`improved/` directories:** `results/models/improved/`, `results/metrics/improved/`, and `results/figures/training/improved/` are reserved for the next iteration
+- **Trial loss:** ~43% average per subject from amplitude rejection — Feet and Tongue classes most affected due to EMG contamination.
+- **Class imbalance post-rejection:** Up to 1:2.3 class ratio (Tongue vs Right Hand for A01T) — all models use `class_weight='balanced'`.
+- **Low-performer ceiling:** A04T, A05T, A06T remain below 60% (SVM baseline) even after tuning — subject-specific preprocessing may be required.
+- **Training sessions only:** All 9 evaluation sessions (`A0xE.gdf`) are in `data/raw/` but not yet preprocessed or evaluated.
+- **`improved/` figures:** Only 3 aggregate comparison plots — per-subject improved plots not yet generated.
 
 ---
 
 ## Next Steps
 
-1. **Hyperparameter tuning** — Grid search over SVM `C`/`gamma`, RF `n_estimators`, CSP regularization
-2. **Pipeline improvements** — Common Average Reference (CAR), adaptive rejection thresholds per subject
-3. **Deep learning** — EEGNet end-to-end classification on raw epochs
-4. **Cross-subject generalization** — Train on N-1 subjects, evaluate on held-out subject
-5. **Evaluation sessions** — Process `A0xE.gdf` for proper held-out test set evaluation
+1. **Subject-specific preprocessing** — Adaptive rejection thresholds, Common Average Reference (CAR), per-subject ICA tuning for low performers
+2. **Deep learning** — EEGNet on raw epochs (bypasses hand-crafted CSP features)
+3. **Cross-subject generalization** — Train on 8 subjects, evaluate on held-out 9th
+4. **Evaluation sessions** — Process `A0xE.gdf` files for proper held-out test evaluation
+5. **Per-subject improved figures** — Generate full diagnostic plots for the improved pipeline per subject
 
 ---
 
