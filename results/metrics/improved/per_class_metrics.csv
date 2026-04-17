@@ -1,0 +1,145 @@
+Subject,Model,Class,Precision,Recall,F1,Support
+A01T,SVM_tuned,Left Hand,0.8852,0.8852,0.8852,61.0
+A01T,SVM_tuned,Right Hand,0.8889,0.918,0.9032,61.0
+A01T,SVM_tuned,Feet,0.8571,0.6885,0.7636,61.0
+A01T,SVM_tuned,Tongue,0.7887,0.918,0.8485,61.0
+A01T,LDA_improved,Left Hand,0.8868,0.7705,0.8246,61.0
+A01T,LDA_improved,Right Hand,0.8308,0.8852,0.8571,61.0
+A01T,LDA_improved,Feet,0.7541,0.7541,0.7541,61.0
+A01T,LDA_improved,Tongue,0.8,0.8525,0.8254,61.0
+A01T,RF_improved,Left Hand,0.8621,0.8197,0.8403,61.0
+A01T,RF_improved,Right Hand,0.8358,0.918,0.875,61.0
+A01T,RF_improved,Feet,0.7708,0.6066,0.6789,61.0
+A01T,RF_improved,Tongue,0.7183,0.8361,0.7727,61.0
+A01T,Ensemble,Left Hand,0.8814,0.8525,0.8667,61.0
+A01T,Ensemble,Right Hand,0.8594,0.9016,0.88,61.0
+A01T,Ensemble,Feet,0.8269,0.7049,0.7611,61.0
+A01T,Ensemble,Tongue,0.7971,0.9016,0.8462,61.0
+A02T,SVM_tuned,Left Hand,0.381,0.3934,0.3871,61.0
+A02T,SVM_tuned,Right Hand,0.5306,0.4262,0.4727,61.0
+A02T,SVM_tuned,Feet,0.7612,0.8361,0.7969,61.0
+A02T,SVM_tuned,Tongue,0.5692,0.6066,0.5873,61.0
+A02T,LDA_improved,Left Hand,0.4074,0.3607,0.3826,61.0
+A02T,LDA_improved,Right Hand,0.5273,0.4754,0.5,61.0
+A02T,LDA_improved,Feet,0.7971,0.9016,0.8462,61.0
+A02T,LDA_improved,Tongue,0.5455,0.5902,0.5669,61.0
+A02T,RF_improved,Left Hand,0.3958,0.3115,0.3486,61.0
+A02T,RF_improved,Right Hand,0.4412,0.4918,0.4651,61.0
+A02T,RF_improved,Feet,0.7681,0.8689,0.8154,61.0
+A02T,RF_improved,Tongue,0.5424,0.5246,0.5333,61.0
+A02T,Ensemble,Left Hand,0.4792,0.377,0.422,61.0
+A02T,Ensemble,Right Hand,0.5294,0.5902,0.5581,61.0
+A02T,Ensemble,Feet,0.8,0.8525,0.8254,61.0
+A02T,Ensemble,Tongue,0.5556,0.5738,0.5645,61.0
+A03T,SVM_tuned,Left Hand,0.9333,0.918,0.9256,61.0
+A03T,SVM_tuned,Right Hand,0.9333,0.918,0.9256,61.0
+A03T,SVM_tuned,Feet,0.9091,0.8197,0.8621,61.0
+A03T,SVM_tuned,Tongue,0.7681,0.8689,0.8154,61.0
+A03T,LDA_improved,Left Hand,0.9655,0.918,0.9412,61.0
+A03T,LDA_improved,Right Hand,0.9649,0.9016,0.9322,61.0
+A03T,LDA_improved,Feet,0.8448,0.8033,0.8235,61.0
+A03T,LDA_improved,Tongue,0.7465,0.8689,0.803,61.0
+A03T,RF_improved,Left Hand,0.9333,0.918,0.9256,61.0
+A03T,RF_improved,Right Hand,0.9206,0.9508,0.9355,61.0
+A03T,RF_improved,Feet,0.8361,0.8361,0.8361,61.0
+A03T,RF_improved,Tongue,0.8333,0.8197,0.8264,61.0
+A03T,Ensemble,Left Hand,0.918,0.918,0.918,61.0
+A03T,Ensemble,Right Hand,0.9649,0.9016,0.9322,61.0
+A03T,Ensemble,Feet,0.8525,0.8525,0.8525,61.0
+A03T,Ensemble,Tongue,0.7846,0.8361,0.8095,61.0
+A04T,SVM_tuned,Left Hand,0.4706,0.4848,0.4776,66.0
+A04T,SVM_tuned,Right Hand,0.4265,0.4754,0.4496,61.0
+A04T,SVM_tuned,Feet,0.5,0.5469,0.5224,64.0
+A04T,SVM_tuned,Tongue,0.5,0.3881,0.437,67.0
+A04T,LDA_improved,Left Hand,0.4677,0.4394,0.4531,66.0
+A04T,LDA_improved,Right Hand,0.4655,0.4426,0.4538,61.0
+A04T,LDA_improved,Feet,0.4925,0.5156,0.5038,64.0
+A04T,LDA_improved,Tongue,0.4789,0.5075,0.4928,67.0
+A04T,RF_improved,Left Hand,0.4848,0.4848,0.4848,66.0
+A04T,RF_improved,Right Hand,0.431,0.4098,0.4202,61.0
+A04T,RF_improved,Feet,0.4559,0.4844,0.4697,64.0
+A04T,RF_improved,Tongue,0.4697,0.4627,0.4662,67.0
+A04T,Ensemble,Left Hand,0.4776,0.4848,0.4812,66.0
+A04T,Ensemble,Right Hand,0.463,0.4098,0.4348,61.0
+A04T,Ensemble,Feet,0.4615,0.4688,0.4651,64.0
+A04T,Ensemble,Tongue,0.4583,0.4925,0.4748,67.0
+A05T,SVM_tuned,Left Hand,0.338,0.3934,0.3636,61.0
+A05T,SVM_tuned,Right Hand,0.45,0.4426,0.4463,61.0
+A05T,SVM_tuned,Feet,0.2857,0.2623,0.2735,61.0
+A05T,SVM_tuned,Tongue,0.614,0.5738,0.5932,61.0
+A05T,LDA_improved,Left Hand,0.3548,0.3607,0.3577,61.0
+A05T,LDA_improved,Right Hand,0.4507,0.5246,0.4848,61.0
+A05T,LDA_improved,Feet,0.2245,0.1803,0.2,61.0
+A05T,LDA_improved,Tongue,0.6129,0.623,0.6179,61.0
+A05T,RF_improved,Left Hand,0.3939,0.4262,0.4094,61.0
+A05T,RF_improved,Right Hand,0.4643,0.4262,0.4444,61.0
+A05T,RF_improved,Feet,0.3333,0.3443,0.3387,61.0
+A05T,RF_improved,Tongue,0.6102,0.5902,0.6,61.0
+A05T,Ensemble,Left Hand,0.3333,0.3443,0.3387,61.0
+A05T,Ensemble,Right Hand,0.4516,0.459,0.4553,61.0
+A05T,Ensemble,Feet,0.2712,0.2623,0.2667,61.0
+A05T,Ensemble,Tongue,0.6333,0.623,0.6281,61.0
+A06T,SVM_tuned,Left Hand,0.5946,0.6286,0.6111,70.0
+A06T,SVM_tuned,Right Hand,0.5,0.5072,0.5036,69.0
+A06T,SVM_tuned,Feet,0.5352,0.5507,0.5429,69.0
+A06T,SVM_tuned,Tongue,0.5079,0.4571,0.4812,70.0
+A06T,LDA_improved,Left Hand,0.5915,0.6,0.5957,70.0
+A06T,LDA_improved,Right Hand,0.4603,0.4203,0.4394,69.0
+A06T,LDA_improved,Feet,0.4795,0.5072,0.493,69.0
+A06T,LDA_improved,Tongue,0.4648,0.4714,0.4681,70.0
+A06T,RF_improved,Left Hand,0.5672,0.5429,0.5547,70.0
+A06T,RF_improved,Right Hand,0.4286,0.4348,0.4317,69.0
+A06T,RF_improved,Feet,0.4928,0.4928,0.4928,69.0
+A06T,RF_improved,Tongue,0.4722,0.4857,0.4789,70.0
+A06T,Ensemble,Left Hand,0.6027,0.6286,0.6154,70.0
+A06T,Ensemble,Right Hand,0.4762,0.4348,0.4545,69.0
+A06T,Ensemble,Feet,0.4933,0.5362,0.5139,69.0
+A06T,Ensemble,Tongue,0.5224,0.5,0.5109,70.0
+A07T,SVM_tuned,Left Hand,0.8,0.7869,0.7934,61.0
+A07T,SVM_tuned,Right Hand,0.7273,0.7869,0.7559,61.0
+A07T,SVM_tuned,Feet,0.8667,0.8525,0.8595,61.0
+A07T,SVM_tuned,Tongue,0.8448,0.8033,0.8235,61.0
+A07T,LDA_improved,Left Hand,0.8214,0.7541,0.7863,61.0
+A07T,LDA_improved,Right Hand,0.7903,0.8033,0.7967,61.0
+A07T,LDA_improved,Feet,0.8308,0.8852,0.8571,61.0
+A07T,LDA_improved,Tongue,0.8197,0.8197,0.8197,61.0
+A07T,RF_improved,Left Hand,0.7333,0.7213,0.7273,61.0
+A07T,RF_improved,Right Hand,0.7321,0.6721,0.7009,61.0
+A07T,RF_improved,Feet,0.75,0.8361,0.7907,61.0
+A07T,RF_improved,Tongue,0.7667,0.7541,0.7603,61.0
+A07T,Ensemble,Left Hand,0.7679,0.7049,0.735,61.0
+A07T,Ensemble,Right Hand,0.7377,0.7377,0.7377,61.0
+A07T,Ensemble,Feet,0.8281,0.8689,0.848,61.0
+A07T,Ensemble,Tongue,0.7937,0.8197,0.8065,61.0
+A08T,SVM_tuned,Left Hand,0.9,0.8852,0.8926,61.0
+A08T,SVM_tuned,Right Hand,0.94,0.7705,0.8468,61.0
+A08T,SVM_tuned,Feet,0.7534,0.8462,0.7971,65.0
+A08T,SVM_tuned,Tongue,0.8551,0.9077,0.8806,65.0
+A08T,LDA_improved,Left Hand,0.8852,0.8852,0.8852,61.0
+A08T,LDA_improved,Right Hand,0.9412,0.7869,0.8571,61.0
+A08T,LDA_improved,Feet,0.7162,0.8154,0.7626,65.0
+A08T,LDA_improved,Tongue,0.8788,0.8923,0.8855,65.0
+A08T,RF_improved,Left Hand,0.8983,0.8689,0.8833,61.0
+A08T,RF_improved,Right Hand,0.8333,0.8197,0.8264,61.0
+A08T,RF_improved,Feet,0.7414,0.6615,0.6992,65.0
+A08T,RF_improved,Tongue,0.8,0.9231,0.8571,65.0
+A08T,Ensemble,Left Hand,0.9,0.8852,0.8926,61.0
+A08T,Ensemble,Right Hand,0.9423,0.8033,0.8673,61.0
+A08T,Ensemble,Feet,0.7361,0.8154,0.7737,65.0
+A08T,Ensemble,Tongue,0.8676,0.9077,0.8872,65.0
+A09T,SVM_tuned,Left Hand,0.7213,0.7213,0.7213,61.0
+A09T,SVM_tuned,Right Hand,0.5882,0.4918,0.5357,61.0
+A09T,SVM_tuned,Feet,0.5538,0.5902,0.5714,61.0
+A09T,SVM_tuned,Tongue,0.7761,0.8525,0.8125,61.0
+A09T,LDA_improved,Left Hand,0.8125,0.6393,0.7156,61.0
+A09T,LDA_improved,Right Hand,0.5357,0.4918,0.5128,61.0
+A09T,LDA_improved,Feet,0.5147,0.5738,0.5426,61.0
+A09T,LDA_improved,Tongue,0.7361,0.8689,0.797,61.0
+A09T,RF_improved,Left Hand,0.7273,0.7869,0.7559,61.0
+A09T,RF_improved,Right Hand,0.5636,0.5082,0.5345,61.0
+A09T,RF_improved,Feet,0.4921,0.5082,0.5,61.0
+A09T,RF_improved,Tongue,0.7833,0.7705,0.7769,61.0
+A09T,Ensemble,Left Hand,0.7719,0.7213,0.7458,61.0
+A09T,Ensemble,Right Hand,0.5357,0.4918,0.5128,61.0
+A09T,Ensemble,Feet,0.5072,0.5738,0.5385,61.0
+A09T,Ensemble,Tongue,0.7903,0.8033,0.7967,61.0

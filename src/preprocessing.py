@@ -93,18 +93,45 @@ def create_epochs(raw_clean):
         preload=True
     )
 
-    ep_data = epochs.get_data() * 1e6
+    ep_data   = epochs.get_data() * 1e6
     trial_max = ep_data.max(axis=(1, 2))
-    clean_mask = trial_max <= 100
-    epochs_final = epochs[clean_mask]
+    labels    = epochs.events[:, 2]
 
-    print(f"Epochs created")
-    print(f"  Before rejection: {len(epochs)} trials")
-    print(f"  After rejection:  {len(epochs_final)} trials")
-    print(f"  Dropped:          {len(epochs) - len(epochs_final)} trials")
-    print(f"  Per class:")
-    for cls in epochs_final.event_id:
-        print(f"    {cls}: {len(epochs_final[cls])} trials")
+    KEEP_PERCENTILE = 85
+    keep_indices = []
+
+    print(f"  Per-class rejection (keeping {KEEP_PERCENTILE}th percentile / minimum 80uV):")
+
+    for cls_name, cls_code in mi_event_id.items():
+        cls_mask    = labels == cls_code
+        cls_indices = np.where(cls_mask)[0]
+        cls_maxamps = trial_max[cls_indices]
+
+        # Calculate percentile for this class only
+        cls_threshold = np.percentile(cls_maxamps, KEEP_PERCENTILE)
+        
+        # Floor threshold ensures we never drop truly clean trials just to meet the 15% quota
+        floor_threshold = max(cls_threshold, 80.0)
+
+        cls_keep = cls_indices[cls_maxamps <= floor_threshold]
+        keep_indices.extend(cls_keep.tolist())
+
+        n_dropped = len(cls_indices) - len(cls_keep)
+        print(f"    {cls_name:12}: threshold={floor_threshold:.1f}uV  "
+              f"kept={len(cls_keep)}/72  dropped={n_dropped}")
+
+    keep_indices.sort()
+    epochs_final = epochs[keep_indices]
+
+    final_counts = [len(epochs_final[cls]) for cls in mi_event_id]
+    
+    imbalance = max(final_counts) - min(final_counts)
+    if imbalance > 2:
+        print(f"  ⚠️ Note: Class imbalance of {imbalance} observed. (Floor thresholding preserved unequal clean trials)")
+
+    print(f"  Trials before: {len(epochs)}")
+    print(f"  Trials after:  {len(epochs_final)}")
+    print(f"  Per class:     {final_counts}")
 
     return epochs, epochs_final
 
@@ -150,15 +177,15 @@ def plot_trial_distribution(epochs_final, subject_id, figures_path='../results/f
 
 
 def plot_channel_correlation(epochs_final, subject_id, figures_path='../results/figures/'):
-    epoch_data  = epochs_final.get_data()[:, :22, :] * 1e6
+    epoch_data  = epochs_final.get_data(picks='eeg') * 1e6
     epoch_mean  = epoch_data.mean(axis=2)
     corr_matrix = np.corrcoef(epoch_mean.T)
 
     plt.figure(figsize=(14, 11))
     sns.heatmap(
         corr_matrix,
-        xticklabels=epochs_final.ch_names[:22],
-        yticklabels=epochs_final.ch_names[:22],
+        xticklabels=epochs_final.copy().pick('eeg').ch_names,
+        yticklabels=epochs_final.copy().pick('eeg').ch_names,
         cmap='RdBu_r',
         center=0,
         vmin=-1, vmax=1,

@@ -11,6 +11,10 @@ from sklearn.preprocessing import label_binarize
 import pickle
 import os
 import json
+from sklearn.pipeline import Pipeline, FeatureUnion
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.preprocessing import StandardScaler
+from mne.decoding import CSP
 
 
 CLASS_NAMES = ['Left Hand', 'Right Hand', 'Feet', 'Tongue']
@@ -38,6 +42,33 @@ def build_rf():
         class_weight='balanced',
         random_state=42
     )
+
+
+class BandExtractor(BaseEstimator, TransformerMixin):
+    def __init__(self, band_idx):
+        self.band_idx = band_idx
+    def fit(self, X, y=None):
+        return self
+    def transform(self, X):
+        return X[:, self.band_idx, :, :]
+
+
+
+def build_csp_pipeline(clf, n_components=4):
+    return Pipeline([
+        ('features', FeatureUnion([
+            ('mu', Pipeline([
+                ('extract', BandExtractor(0)),
+                ('csp', CSP(n_components=n_components, reg=0.05, log=True, norm_trace=False))
+            ])),
+            ('beta', Pipeline([
+                ('extract', BandExtractor(1)),
+                ('csp', CSP(n_components=n_components, reg=0.05, log=True, norm_trace=False))
+            ]))
+        ])),
+        ('scaler', StandardScaler()),
+        ('clf', clf)
+    ])
 
 
 def evaluate_model(model, X, y, n_splits=5):
@@ -76,14 +107,17 @@ def load_model(subject_id, model_name, load_path='../results/models/baseline'):
     return model
 
 
-def save_metrics(all_results, subjects, save_path='../results/metrics/baseline'):
+def save_metrics(all_results, subjects, save_path='../results/metrics/baseline/'):
     os.makedirs(save_path, exist_ok=True)
+
+    # dynamically get model names from the first subject's keys
+    model_names = list(all_results[subjects[0]].keys())
 
     # Accuracy summary CSV
     rows = []
     for subject_id in subjects:
         row = {'Subject': subject_id}
-        for model_name in ['SVM', 'LDA', 'RF']:
+        for model_name in model_names:
             result = all_results[subject_id][model_name]
             row[f'{model_name}_mean'] = round(result['mean'] * 100, 2)
             row[f'{model_name}_std']  = round(result['std']  * 100, 2)
@@ -95,18 +129,20 @@ def save_metrics(all_results, subjects, save_path='../results/metrics/baseline')
     # Per class F1 CSV
     f1_rows = []
     for subject_id in subjects:
-        for model_name in ['SVM', 'LDA', 'RF']:
+        for model_name in model_names:
             report = all_results[subject_id][model_name]['report']
             for cls in CLASS_NAMES:
-                f1_rows.append({
-                    'Subject':   subject_id,
-                    'Model':     model_name,
-                    'Class':     cls,
-                    'Precision': round(report[cls]['precision'], 4),
-                    'Recall':    round(report[cls]['recall'],    4),
-                    'F1':        round(report[cls]['f1-score'],  4),
-                    'Support':   report[cls]['support']
-                })
+                # Make sure the class exists in the report
+                if cls in report:
+                    f1_rows.append({
+                        'Subject':   subject_id,
+                        'Model':     model_name,
+                        'Class':     cls,
+                        'Precision': round(report[cls]['precision'], 4),
+                        'Recall':    round(report[cls]['recall'],    4),
+                        'F1':        round(report[cls]['f1-score'],  4),
+                        'Support':   report[cls]['support']
+                    })
     f1_df = pd.DataFrame(f1_rows)
     f1_df.to_csv(f'{save_path}per_class_metrics.csv', index=False)
     print(f"Saved per_class_metrics.csv")
@@ -114,7 +150,7 @@ def save_metrics(all_results, subjects, save_path='../results/metrics/baseline')
     # Per fold scores CSV
     fold_rows = []
     for subject_id in subjects:
-        for model_name in ['SVM', 'LDA', 'RF']:
+        for model_name in model_names:
             scores = all_results[subject_id][model_name]['scores']
             for fold_idx, score in enumerate(scores):
                 fold_rows.append({

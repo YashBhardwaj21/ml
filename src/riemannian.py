@@ -13,9 +13,75 @@ import os
 CLASS_NAMES = ['Left Hand', 'Right Hand', 'Feet', 'Tongue']
 
 
-def extract_riemannian_features(epochs_final, tmin=0.5, tmax=3.5):
+from sklearn.pipeline import Pipeline
+from sklearn.svm import SVC
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.ensemble import RandomForestClassifier
+
+def build_riemannian_pipeline(clf):
+    """
+    Returns a full sklearn Pipeline:
+        raw epochs (n_trials, n_channels, n_times)
+        → Covariances (OAS estimator, robust to small samples)
+        → TangentSpace (Fréchet mean computed on train fold only)
+        → StandardScaler
+        → classifier
+    """
+    return Pipeline([
+        ('cov',    Covariances(estimator='oas')),
+        ('ts',     TangentSpace(metric='riemann')),
+        ('scaler', StandardScaler()),
+        ('clf',    clf)
+    ])
+
+
+def build_riemannian_svm():
+    return build_riemannian_pipeline(
+        SVC(kernel='rbf', class_weight='balanced',
+            probability=True, random_state=42)
+    )
+
+
+def build_riemannian_lda():
+    return build_riemannian_pipeline(
+        LinearDiscriminantAnalysis(solver='lsqr', shrinkage='auto')
+    )
+
+
+def build_riemannian_rf():
+    return build_riemannian_pipeline(
+        RandomForestClassifier(n_estimators=200,
+                               class_weight='balanced',
+                               random_state=42)
+    )
+
+
+def load_riemannian_epochs(subject_id, load_path='../data/processed/'):
+    import mne
+    from sklearn.preprocessing import LabelEncoder
+
+    epochs = mne.read_epochs(
+        f'{load_path}{subject_id}_clean_epo.fif',
+        preload=True,
+        verbose=False
+    )
+
+    X = epochs.get_data(picks='eeg')
+    y_raw = epochs.events[:, 2]
+    le = LabelEncoder()
+    y  = le.fit_transform(y_raw)
+
+    return X, y, epochs.info
+
+
+def extract_riemannian_features_offline(epochs_final, tmin=0.5, tmax=3.5):
+    """
+    WARNING: fits on the full dataset — do NOT use this output for
+    cross-validated accuracy estimates. Only use for visualisation
+    (PCA scatter plots, covariance heatmaps, etc.).
+    """
     epochs_cropped = epochs_final.copy().crop(tmin=tmin, tmax=tmax)
-    X     = epochs_cropped.get_data()[:, :22, :]
+    X     = epochs_cropped.get_data(picks='eeg')
     y_raw = epochs_final.events[:, 2]
     le    = LabelEncoder()
     y     = le.fit_transform(y_raw)

@@ -17,7 +17,7 @@ def extract_csp_features(epochs_final, n_components=8, tmin=0.5, tmax=3.5):
     epochs_beta = epochs_cropped.copy().filter(13., 30., fir_design='firwin', verbose=False)
 
     X_mu   = epochs_mu.get_data()[:,   :22, :]
-    X_beta = epochs_beta.get_data()[:, :22, :]
+    X_beta = epochs_beta.get_data(picks='eeg')
 
     y_raw = epochs_final.events[:, 2]
     le = LabelEncoder()
@@ -81,6 +81,33 @@ def save_features(subject_id, X_csp, y, save_path='../data/features/csp/'):
     save_file = f'{save_path}{subject_id}_features.npz'
     np.savez(save_file, X=X_csp, y=y)
     print(f"Features saved to {save_file}")
+
+
+def load_epoched_bands(subject_id, load_path='../data/processed/', tmin=0.5, tmax=3.5):
+    """
+    Loads raw clean epochs, crops, and splits into Mu and Beta frequency bands.
+    Returns X combined (n_trials, 2_bands, n_channels, n_times) and y targets.
+    Used for rigorous Cross-Validation without data leakage.
+    """
+    file_path = f'{load_path}{subject_id}_clean_epo.fif'
+    epochs_final = mne.read_epochs(file_path, preload=True, verbose=False)
+    
+    epochs_cropped = epochs_final.copy().crop(tmin=tmin, tmax=tmax)
+    
+    epochs_mu   = epochs_cropped.copy().filter(8.,  13., fir_design='firwin', verbose=False)
+    epochs_beta = epochs_cropped.copy().filter(13., 30., fir_design='firwin', verbose=False)
+    
+    X_mu   = epochs_mu.get_data(picks='eeg')
+    X_beta = epochs_beta.get_data(picks='eeg')
+    
+    y_raw = epochs_final.events[:, 2]
+    le = LabelEncoder()
+    y = le.fit_transform(y_raw)
+    
+    X_combined = np.stack([X_mu, X_beta], axis=1)
+    
+    print(f"Loaded raw epoched bands for {subject_id}: X={X_combined.shape}, y={y.shape}")
+    return X_combined, y
 
 
 def load_features(subject_id, load_path='../data/features/csp/'):

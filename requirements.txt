@@ -14,6 +14,8 @@ pandas==3.0.1
 # Machine Learning
 scikit-learn==1.8.0
 joblib==1.5.3          
+imbalanced-learn>=0.11.0
+pyriemann>=0.6
 
 # Visualization
 matplotlib==3.10.8
